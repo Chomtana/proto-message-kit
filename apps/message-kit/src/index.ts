@@ -14,3 +14,8 @@ runWithProtokit(async (context: HandlerProtokitContext) => {
     return result;
   });
 });
+
+process.on('unhandledRejection', (error) => {
+  console.trace(error);
+});
+

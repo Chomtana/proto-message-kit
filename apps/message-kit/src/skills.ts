@@ -1,12 +1,41 @@
+import { handleBalance } from "./handler/balance.js";
 import { handleEns } from "./handler/ens.js";
 import type { SkillGroup } from "@xmtp/message-kit";
+import { protokitHandler } from "./protokit.js";
 
 export const skills: SkillGroup[] = [
   {
-    name: 'Mina Protokit Balance Bot',
+    name: 'Mina Protokit Faucet Bot',
     tag: '@protokit',
-    description: 'A basic protokit-enabled agent',
-    skills: []
+    description: 'A basic protokit-enabled faucet agent',
+    skills: [
+      {
+        skill: "/balance [address]",
+        handler: protokitHandler(handleBalance),
+        description: "Query token balance of the specified address",
+        examples: [
+          "/balance B62qrgEkAAFxUufRcS9DNuDTV3yksHQn5MpGzM8f5CLJRNpRs27DdkS"
+        ],
+        params: {
+          address: {
+            type: "string",
+          }
+        },
+      },
+      {
+        skill: "/faucet [address]",
+        handler: protokitHandler(handleBalance),
+        description: "Request faucet and get token send to the specified address",
+        examples: [
+          "/faucet B62qrgEkAAFxUufRcS9DNuDTV3yksHQn5MpGzM8f5CLJRNpRs27DdkS"
+        ],
+        params: {
+          address: {
+            type: "string",
+          }
+        },
+      },
+    ]
   },
 
   {

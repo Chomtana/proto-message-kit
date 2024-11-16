@@ -2,10 +2,11 @@ import { Config, Handler, HandlerContext } from "@xmtp/message-kit";
 import { run } from "@xmtp/message-kit";
 import { client, buildAppChain } from "chain";
 import Database, { Database as DatabaseType } from "better-sqlite3";
-import { PrivateKey } from "o1js";
-import { InMemorySigner } from "@proto-kit/sdk";
+import { PrivateKey, PublicKey } from "o1js";
+import { AppChainTransaction, InMemorySigner } from "@proto-kit/sdk";
+import { Balance } from "@proto-kit/library";
 
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface ComputedTransactionJSON {
   argsFields: string[];
@@ -49,9 +50,9 @@ export interface BlockQueryResponse {
 // Database implementation
 class WalletDB {
   db: DatabaseType | null = null;
-  clients: {[ethAddress: string]: typeof client} = {};
+  clients: { [ethAddress: string]: typeof client } = {};
 
-  init(): void {
+  constructor() {
     this.db = new Database("./wallets.db");
 
     this.db.exec(`
@@ -84,21 +85,21 @@ class WalletDB {
   }
 
   getOrCreateMinaKey(ethAddress: string): PrivateKey {
-    const pkSaved = this.getMinaKey(ethAddress)
-    if (pkSaved) return pkSaved
+    const pkSaved = this.getMinaKey(ethAddress);
+    if (pkSaved) return pkSaved;
 
-    const pk = PrivateKey.random()
-    this.insertKeyPair(ethAddress, pk)
+    const pk = PrivateKey.random();
+    this.insertKeyPair(ethAddress, pk);
 
-    return pk
+    return pk;
   }
 
   async getClient(ethAddress: string): Promise<typeof client> {
-    const pk = this.getOrCreateMinaKey(ethAddress)
-    const client = buildAppChain(InMemorySigner)
-    await client.start()
-    client.resolveOrFail('Signer', InMemorySigner).config.signer = pk
-    return client
+    const pk = this.getOrCreateMinaKey(ethAddress);
+    const client = buildAppChain(InMemorySigner);
+    await client.start();
+    client.resolveOrFail("Signer", InMemorySigner).config.signer = pk;
+    return client;
   }
 
   close(): void {
@@ -114,10 +115,10 @@ async function loadBlock() {
     const graphql = process.env.NEXT_PUBLIC_PROTOKIT_GRAPHQL_URL;
     if (graphql === undefined) {
       throw new Error(
-        "Environment variable NEXT_PUBLIC_PROTOKIT_GRAPHQL_URL not set, can't execute graphql requests",
+        "Environment variable NEXT_PUBLIC_PROTOKIT_GRAPHQL_URL not set, can't execute graphql requests"
       );
     }
-  
+
     const response = await fetch(graphql, {
       method: "POST",
       headers: {
@@ -154,9 +155,9 @@ async function loadBlock() {
         `,
       }),
     });
-  
+
     const { data } = (await response.json()) as BlockQueryResponse;
-  
+
     return data.network.unproven
       ? {
           height: data.network.unproven.block.height,
@@ -164,7 +165,7 @@ async function loadBlock() {
         }
       : undefined;
   } catch (err) {
-    return undefined
+    return undefined;
   }
 }
 
@@ -176,45 +177,67 @@ export interface PublicProtokitContext {
 }
 
 export interface PrivateProtokitContext {
-  appKey: PrivateKey
-  client: typeof client
+  appKey: PrivateKey;
+  client: typeof client;
+  transaction: (
+    callback: (sender: PublicKey) => Promise<void>
+  ) => Promise<AppChainTransaction>;
 }
 
-export interface ProtokitContext extends PublicProtokitContext, PrivateProtokitContext {}
+export interface ProtokitContext
+  extends PublicProtokitContext,
+    PrivateProtokitContext {}
 
 export interface HandlerProtokitContext extends HandlerContext {
   protokit: ProtokitContext;
 }
 
-let publicProtokitContext: PublicProtokitContext
+let publicProtokitContext: PublicProtokitContext;
 
 export const tickInterval = 1000;
 
-export type HandlerProtokit = (
+export type HandlerProtokit<T = void> = (
   context: HandlerProtokitContext
-) => Promise<void>;
+) => Promise<T>;
 
-export async function protokitContext(context: HandlerContext): Promise<HandlerProtokitContext> {
-  const protokitContext: HandlerProtokitContext = context as HandlerProtokitContext
+export async function protokitContext(
+  context: HandlerContext
+): Promise<HandlerProtokitContext> {
+  const protokitContext: HandlerProtokitContext =
+    context as HandlerProtokitContext;
 
-  const ethAddress = context.message.sender.address
+  const ethAddress = context.message.sender.address;
 
-  const appKey = await publicProtokitContext.getAppKey(ethAddress)
-  const client = await publicProtokitContext.getClient(ethAddress)
+  const appKey = await publicProtokitContext.getAppKey(ethAddress);
+  const client = await publicProtokitContext.getClient(ethAddress);
 
   protokitContext.protokit = {
     ...publicProtokitContext,
     appKey,
     client,
-  }
+    async transaction(callback) {
+      const sender = appKey.toPublicKey();
 
-  return protokitContext
+      const tx = await client.transaction(sender, async () => {
+        await callback(sender);
+      });
+
+      await tx.sign();
+      await tx.send();
+
+      return tx;
+    },
+  };
+
+  return protokitContext;
 }
 
-export function protokitHandler(handler: HandlerProtokit): Handler {
+export function protokitHandler<T = void>(
+  handler: HandlerProtokit<T>
+): (context: HandlerContext) => Promise<T> {
   return async (context: HandlerContext) => {
-    return await handler(await protokitContext(context))
-  }
+    return await handler(await protokitContext(context));
+  };
 }
 
 export async function runWithProtokit(
@@ -222,36 +245,37 @@ export async function runWithProtokit(
   config?: Config
 ) {
   // Build public client with random private key
-  const pk = PrivateKey.random()
-  const client = buildAppChain(InMemorySigner)
-  await client.start()
-  client.resolveOrFail('Signer', InMemorySigner).config.signer = pk
+  const pk = PrivateKey.random();
+  const client = buildAppChain(InMemorySigner);
+  await client.start();
+  client.resolveOrFail("Signer", InMemorySigner).config.signer = pk;
 
   const walletDB = new WalletDB();
 
   // Chain state polling
   const chain: ChainState = {
     block: await loadBlock(),
-  }
+  };
 
   setInterval(async () => {
     chain.block = await loadBlock();
-  }, tickInterval)
+    console.debug("Height:", chain.block?.height);
+  }, tickInterval);
 
   publicProtokitContext = {
     chain,
     publicClient: client,
     getAppKey(ethAddress: string) {
-      return walletDB.getOrCreateMinaKey(ethAddress)
+      return walletDB.getOrCreateMinaKey(ethAddress);
     },
     async getClient(ethAddress: string) {
-      return walletDB.getClient(ethAddress)
-    }
-  }
+      return walletDB.getClient(ethAddress);
+    },
+  };
 
   // Wait until chain connected before starting the agent
   while (!chain.block) {
-    await wait(200)  
+    await wait(200);
   }
 
   run(protokitHandler(handler), config);
