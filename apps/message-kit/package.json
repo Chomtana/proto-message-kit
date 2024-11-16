@@ -1,0 +1,39 @@
+{
+  "name": "message-kit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w & sleep 1 && node --loader ts-node/esm --experimental-vm-modules --experimental-wasm-modules --es-module-specifier-resolution=node --watch dist/index.js",
+    "start": "node --loader ts-node/esm --experimental-vm-modules --experimental-wasm-modules --es-module-specifier-resolution=node dist/index.js",
+    "postinstall": "tsc"
+  },
+  "peerDependencies": {
+    "@proto-kit/api": "*",
+    "@proto-kit/common": "*",
+    "@proto-kit/deployment": "*",
+    "@proto-kit/library": "*",
+    "@proto-kit/module": "*",
+    "@proto-kit/persistance": "*",
+    "@proto-kit/protocol": "*",
+    "@proto-kit/sdk": "*",
+    "@proto-kit/sequencer": "*",
+    "@proto-kit/indexer": "*",
+    "@proto-kit/processor": "*",
+    "o1js": "1.6.0"
+  },
+  "dependencies": {
+    "@xmtp/message-kit": "latest",
+    "better-sqlite3": "^11.5.0",
+    "chain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "ts-node": "^10.9.2",
+    "@types/node": "latest",
+    "typescript": "latest"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
