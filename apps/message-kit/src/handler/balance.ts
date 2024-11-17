@@ -36,7 +36,7 @@ export async function handleBalance(
       message: `Balance: ${balance || 0}`,
     };
   } else if (skill == "faucet") {
-    const { address } = params;
+    const { address, amount } = params;
 
     if (!address) {
       return {
@@ -49,10 +49,10 @@ export async function handleBalance(
     const tokenId = TokenId.from(0);
     
     await context.protokit.transaction(async () => {
-      await balances.addBalance(tokenId, PublicKey.fromBase58(address), Balance.from(1000));
+      await balances.addBalance(tokenId, PublicKey.fromBase58(address), Balance.from(amount || 10));
     })
 
-    await context.send(`Dripping 1000 tokens...`)
+    await context.send(`Dripping ${amount || 10} tokens...`)
 
     setTimeout(() => context.executeSkill(`/balance ${address}`), 3000)
 

@@ -23,16 +23,20 @@ export const skills: SkillGroup[] = [
         },
       },
       {
-        skill: "/faucet [address]",
+        skill: "/faucet [address] [amount]",
         handler: protokitHandler(handleBalance),
         description: "Request faucet and get token send to the specified address",
         examples: [
-          "/faucet B62qrgEkAAFxUufRcS9DNuDTV3yksHQn5MpGzM8f5CLJRNpRs27DdkS"
+          "/faucet B62qrgEkAAFxUufRcS9DNuDTV3yksHQn5MpGzM8f5CLJRNpRs27DdkS",
+          "/faucet B62qrgEkAAFxUufRcS9DNuDTV3yksHQn5MpGzM8f5CLJRNpRs27DdkS 20"
         ],
         params: {
           address: {
             type: "string",
-          }
+          },
+          amount: {
+            type: "number",
+          },
         },
       },
     ]

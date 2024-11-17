@@ -13,6 +13,8 @@ runWithProtokit(async (context: HandlerProtokitContext) => {
     const result = (await agent_prompt(address)) ?? "No response available";
     return result;
   });
+}, {
+  model: 'gpt-4o-mini'
 });
 
 process.on('unhandledRejection', (error) => {
