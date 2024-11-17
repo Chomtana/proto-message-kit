@@ -38,7 +38,8 @@
     "indexer:prisma:generate": "prisma generate --schema ./node_modules/@proto-kit/indexer/prisma/schema.prisma",
     "processor:prisma:migrate:dev": "prisma migrate dev  --schema ./src/processor/prisma/schema.prisma",
     "processor:prisma:migrate": "prisma migrate deploy --schema ./src/processor/prisma/schema.prisma",
-    "processor:prisma:generate": "prisma generate --schema ./src/processor/prisma/schema.prisma"
+    "processor:prisma:generate": "prisma generate --schema ./src/processor/prisma/schema.prisma",
+    "postinstall": "npm run build"
   },
   "peerDependencies": {
     "@proto-kit/api": "*",

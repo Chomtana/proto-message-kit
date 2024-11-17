@@ -5,8 +5,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w & sleep 1 && node --loader ts-node/esm --experimental-vm-modules --experimental-wasm-modules --es-module-specifier-resolution=node --watch dist/index.js",
-    "start": "node --loader ts-node/esm --experimental-vm-modules --experimental-wasm-modules --es-module-specifier-resolution=node dist/index.js",
-    "postinstall": "tsc"
+    "start": "node --loader ts-node/esm --experimental-vm-modules --experimental-wasm-modules --es-module-specifier-resolution=node dist/index.js"
   },
   "peerDependencies": {
     "@proto-kit/api": "*",
